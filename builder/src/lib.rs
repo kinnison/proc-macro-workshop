@@ -65,9 +65,29 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     });
 
+    let build_method_fields = fields.named.iter().map(|f| {
+        let id = f.ident.as_ref().unwrap();
+        let id_str = id.to_string();
+        quote! {
+            #id : self.#id
+                      .as_ref()
+                      .map(|f| f.clone())
+                      .ok_or_else(|| concat!("Missing field ", #id_str).to_owned())?
+        }
+    });
+
+    let build_method = quote! {
+        fn build(&mut self) -> Result<#struct_name, Box<dyn std::error::Error>> {
+            Ok(#struct_name {
+                #(#build_method_fields),*
+            })
+        }
+    };
+
     let builder_struct_impl = quote! {
         impl #builder_struct_name {
             #(#builder_methods)*
+            #build_method
         }
     };
 

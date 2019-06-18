@@ -1,9 +1,15 @@
 [package]
-name = "derive_builder"
-version = "0.0.0"
-edition = "2018"
 autotests = false
+edition = "2018"
+name = "derive_builder"
 publish = false
+version = "0.0.0"
+[dependencies]
+quote = "*"
+syn = "*"
+
+[dev-dependencies]
+trybuild = "1.0"
 
 [lib]
 proc-macro = true
@@ -11,9 +17,3 @@ proc-macro = true
 [[test]]
 name = "tests"
 path = "tests/progress.rs"
-
-[dev-dependencies]
-trybuild = "1.0"
-
-[dependencies]
-# TODO

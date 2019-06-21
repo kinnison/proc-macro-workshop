@@ -108,6 +108,7 @@ fn path_to_string(path: &Path) -> String {
 
 impl VisitMut for SortedVisitor {
     fn visit_expr_match_mut(&mut self, expr: &mut ExprMatch) {
+        visit_expr_match_mut(self, expr);
         let is_sorted = expr.attrs.iter().any(|att| att.path.is_ident("sorted"));
         if is_sorted {
             // We need to remove the sorted attribute
@@ -117,13 +118,20 @@ impl VisitMut for SortedVisitor {
             let all_pats: Vec<_> = expr
                 .arms
                 .iter()
-                .flat_map(|arm| arm.pats.iter().flat_map(name_from_pattern))
+                .flat_map(|arm| arm.pats.iter().map(|pat| (pat, name_from_pattern(pat))))
                 .collect();
 
-            let pat_names: Vec<_> = all_pats
-                .iter()
-                .map(|p| path_to_string(p))
-                .collect();
+            for (pat, maybe_name) in all_pats.iter() {
+                if maybe_name.is_none() {
+                    let err = Error::new_spanned(pat, "unsupported by #[remain::sorted]");
+                    self.errs.push(err);
+                    // We probably just want to return now
+                    return;
+                }
+            }
+            let all_pats: Vec<_> = all_pats.iter().flat_map(|(_, n)| n).collect();
+
+            let pat_names: Vec<_> = all_pats.iter().map(|p| path_to_string(p)).collect();
 
             for second in 1..all_pats.len() {
                 for first in 0..second {
@@ -141,7 +149,6 @@ impl VisitMut for SortedVisitor {
                 }
             }
         }
-        visit_expr_match_mut(self, expr);
     }
 }
 

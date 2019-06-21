@@ -3,7 +3,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 
 use proc_macro2::Span;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::{parse_macro_input, Error, Item};
 
 
@@ -12,14 +12,20 @@ pub fn sorted(args: TokenStream, input: TokenStream) -> TokenStream {
     let _ = args;
     let input: Item = parse_macro_input!(input as Item);
 
-    (match sorted_impl(input) {
+    (match sorted_impl(&input) {
         Ok(t) => t.into_token_stream(),
-        Err(e) => e.to_compile_error(),
+        Err(e) => {
+            let e = e.to_compile_error();
+            quote! {
+                #e
+                #input
+            }
+        }
     })
     .into()
 }
 
-fn sorted_impl(input: Item) -> Result<impl ToTokens, Error> {
+fn sorted_impl(input: &Item) -> Result<impl ToTokens, Error> {
     let ienum = match input {
         Item::Enum(ienum) => ienum,
         _ => Err(Error::new(

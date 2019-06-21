@@ -1,9 +1,16 @@
 [package]
-name = "sorted"
-version = "0.0.0"
-edition = "2018"
 autotests = false
+edition = "2018"
+name = "sorted"
 publish = false
+version = "0.0.0"
+[dependencies]
+quote = "*"
+syn = {version="*", features=["full"] }
+proc-macro2 = "*"
+
+[dev-dependencies]
+trybuild = "1.0"
 
 [lib]
 proc-macro = true
@@ -11,9 +18,3 @@ proc-macro = true
 [[test]]
 name = "tests"
 path = "tests/progress.rs"
-
-[dev-dependencies]
-trybuild = "1.0"
-
-[dependencies]
-# TODO

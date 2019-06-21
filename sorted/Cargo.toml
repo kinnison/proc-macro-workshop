@@ -6,7 +6,7 @@ publish = false
 version = "0.0.0"
 [dependencies]
 quote = "*"
-syn = {version="*", features=["full", "visit-mut"] }
+syn = {version="*", features=["full", "visit-mut", "extra-traits"] }
 proc-macro2 = "*"
 
 [dev-dependencies]

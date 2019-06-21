@@ -7,8 +7,9 @@ use proc_macro2::TokenStream as TS;
 use quote::{quote, ToTokens};
 use syn::{
     parse_macro_input,
+    spanned::Spanned,
     visit_mut::{visit_expr_match_mut, visit_item_fn_mut, VisitMut},
-    Error, ExprMatch, Item, ItemFn, Pat, Path,
+    Error, ExprMatch, Ident, Item, ItemFn, Pat, Path,
 };
 
 #[proc_macro_attribute]
@@ -81,11 +82,19 @@ impl SortedVisitor {
     }
 }
 
-fn name_from_pattern(pat: &Pat) -> Option<&Path> {
+fn name_from_pattern(pat: &Pat) -> Option<Path> {
     match pat {
-        Pat::Struct(s) => Some(&s.path),
-        Pat::TupleStruct(ts) => Some(&ts.path),
-        Pat::Path(p) => Some(&p.path),
+        Pat::Ident(i) => Some(i.ident.clone().into()),
+        Pat::Struct(s) => Some(s.path.clone()),
+        Pat::TupleStruct(ts) => Some(ts.path.clone()),
+        Pat::Path(p) => Some(p.path.clone()),
+        Pat::Wild(w) => Some(
+            Ident::new(
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+                w.span(),
+            )
+            .into(),
+        ),
         _ => None,
     }
 }

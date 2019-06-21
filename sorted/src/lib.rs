@@ -35,7 +35,7 @@ fn sorted_impl(input: Item) -> Result<impl ToTokens, Error> {
             // variants[second] is out of order, find the earliest spot it ought
             // to go and report that
             let mut first = second - 1;
-            while first > 1 {
+            while first > 0 {
                 if variants[second] < variants[first - 1] {
                     first -= 1;
                 }

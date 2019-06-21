@@ -58,7 +58,7 @@ fn seq_(input: &SeqMacroInner) -> Result<TokenStream2> {
 }
 
 fn replace_tokens(body: TokenStream2, ident: &Ident, n: u64) -> Result<TokenStream2> {
-    use proc_macro2::{Group, Literal, TokenTree};
+    use proc_macro2::{Group, Literal, Punct, TokenTree};
     fn replace_tokentree(tree: TokenTree, ident: &Ident, n: u64) -> Result<TokenTree> {
         Ok(match tree {
             TokenTree::Group(g) => TokenTree::Group(replace_group(g, ident, n)?),
@@ -83,6 +83,80 @@ fn replace_tokens(body: TokenStream2, ident: &Ident, n: u64) -> Result<TokenStre
             Ok(TokenTree::Literal(Literal::u64_unsuffixed(n)))
         } else {
             Ok(TokenTree::Ident(i))
+        }
+    }
+
+    // First we're looking for Ident `#` Ident2
+    // where Ident2 matches our incoming ident
+    // if we get that, we paste the full span together into a token
+
+    let toks: Vec<_> = body.into_iter().collect();
+    let mut body: Vec<_> = Vec::new();
+    enum ParseState {
+        Waiting,
+        FoundIdent(Ident),
+        FoundHash(Ident, Punct),
+    }
+    use ParseState::*;
+    let mut state = Waiting;
+    for tok in toks {
+        state = match state {
+            Waiting => match tok {
+                TokenTree::Ident(i) => FoundIdent(i),
+                _ => {
+                    body.push(tok);
+                    Waiting
+                }
+            },
+            FoundIdent(i) => match tok {
+                TokenTree::Punct(p) => {
+                    if p.as_char() == '#' {
+                        FoundHash(i, p)
+                    } else {
+                        body.push(TokenTree::Ident(i));
+                        body.push(TokenTree::Punct(p));
+                        Waiting
+                    }
+                }
+                TokenTree::Ident(i2) => {
+                    body.push(TokenTree::Ident(i));
+                    FoundIdent(i2)
+                }
+                _ => {
+                    body.push(TokenTree::Ident(i));
+                    body.push(tok);
+                    Waiting
+                }
+            },
+            FoundHash(i, p) => match tok {
+                TokenTree::Ident(i2) => {
+                    if &i2 == ident {
+                        // paste
+                        let newtok = Ident::new(&format!("{}{}", i, n), i.span());
+                        body.push(TokenTree::Ident(newtok));
+                        Waiting
+                    } else {
+                        body.push(TokenTree::Ident(i));
+                        body.push(TokenTree::Punct(p));
+                        FoundIdent(i2)
+                    }
+                }
+                _ => {
+                    body.push(TokenTree::Ident(i));
+                    body.push(TokenTree::Punct(p));
+                    body.push(tok);
+                    Waiting
+                }
+            },
+        }
+    }
+
+    match state {
+        Waiting => {}
+        FoundIdent(i) => body.push(TokenTree::Ident(i)),
+        FoundHash(i, p) => {
+            body.push(TokenTree::Ident(i));
+            body.push(TokenTree::Punct(p));
         }
     }
 

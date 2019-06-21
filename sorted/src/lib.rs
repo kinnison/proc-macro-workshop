@@ -90,6 +90,22 @@ fn name_from_pattern(pat: &Pat) -> Option<&Path> {
     }
 }
 
+fn path_to_string(path: &Path) -> String {
+    let mut ret = String::new();
+    if path.leading_colon.is_some() {
+        ret.push_str("::");
+    }
+
+    for seg in path.segments.iter() {
+        ret.push_str(&format!("{}::", seg.ident));
+    }
+
+    ret.pop();
+    ret.pop();
+
+    ret
+}
+
 impl VisitMut for SortedVisitor {
     fn visit_expr_match_mut(&mut self, expr: &mut ExprMatch) {
         let is_sorted = expr.attrs.iter().any(|att| att.path.is_ident("sorted"));
@@ -106,7 +122,7 @@ impl VisitMut for SortedVisitor {
 
             let pat_names: Vec<_> = all_pats
                 .iter()
-                .map(|pat| pat.into_token_stream().to_string())
+                .map(|p| path_to_string(p))
                 .collect();
 
             for second in 1..all_pats.len() {

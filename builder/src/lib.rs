@@ -123,7 +123,7 @@ fn derive_builder(input: DeriveInput) -> Result<TokenStream, TokenStream> {
             }
         } else {
             quote! {
-                #id : Option<#ty>
+                #id : std::option::Option<#ty>
             }
         }
     });
@@ -138,11 +138,11 @@ fn derive_builder(input: DeriveInput) -> Result<TokenStream, TokenStream> {
         let id = &f.ident;
         if field_is_builder_vec(&f) {
             quote! {
-                #id : Some(Vec::new())
+                #id : std::option::Option::Some(std::vec::Vec::new())
             }
         } else {
             quote! {
-                #id : None
+                #id : std::option::Option::None
             }
         }
     });
@@ -167,7 +167,7 @@ fn derive_builder(input: DeriveInput) -> Result<TokenStream, TokenStream> {
                 let ty = optional_type(&ty);
                 Ok(quote! {
                     fn #id ( &mut self, #id : #ty ) -> &mut Self {
-                        self.#id = Some(#id);
+                        self.#id = std::option::Option::Some(#id);
                         self
                     }
 
@@ -176,7 +176,7 @@ fn derive_builder(input: DeriveInput) -> Result<TokenStream, TokenStream> {
                 // Non-optional field, so process attribute
                 let mut main = quote! {
                         fn #id ( &mut self, #id : #ty ) -> &mut Self {
-                            self.#id = Some(#id);
+                            self.#id = std::option::Option::Some(#id);
                             self
                         }
                 };
@@ -224,8 +224,8 @@ fn derive_builder(input: DeriveInput) -> Result<TokenStream, TokenStream> {
     });
 
     let build_method = quote! {
-        fn build(&mut self) -> Result<#struct_name, Box<dyn std::error::Error>> {
-            Ok(#struct_name {
+        fn build(&mut self) -> std::result::Result<#struct_name, std::boxed::Box<dyn std::error::Error>> {
+            std::result::Result::Ok(#struct_name {
                 #(#build_method_fields),*
             })
         }
